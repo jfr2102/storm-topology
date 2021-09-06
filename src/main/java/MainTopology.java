@@ -6,23 +6,29 @@ import org.apache.storm.topology.TopologyBuilder;
 public class MainTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("IntegerSpout", new IntegerSpout());
-        builder.setBolt("MyBolt",new MyBolt()).shuffleGrouping("IntegerSpout");
+        //builder.setSpout("IntegerSpout", new IntegerSpout());
+        builder.setSpout("IntegerSput", new IntegerSpout(), 2);
+        builder.setBolt("MyBolt",new MyBolt(),2).shuffleGrouping("IntegerSpout");
 
         Config config = new Config();
-        config.setDebug(false);
-        //config.setNumWorkers(10);
-        //config.setMaxSpoutPending(5000);
-        LocalCluster cluster = new LocalCluster();
+        //config.setDebug(false);
+        config.setNumWorkers(6);
+        config.setMaxSpoutPending(50000);
+        config.setNumEventLoggers(1);
+        config.setStatsSampleRate(0.05);
+       // bei local
+        //LocalCluster cluster = new LocalCluster();
 
         try{
-            cluster.submitTopology("toplogy", config, builder.createTopology());
-           // StormSubmitter.submitTopology("mytopology", config, builder.createTopology());
-            Thread.sleep(10000);
+            //bei local
+           // cluster.submitTopology("toplogy", config, builder.createTopology());
+            //bei cluster run
+            StormSubmitter.submitTopology("mytopology", config, builder.createTopology());
+            Thread.sleep(1000);
         } catch (Exception e){
             e.printStackTrace();
         } finally {
-            cluster.shutdown();
+           // cluster.shutdown();
         }
     }
 }
