@@ -7,7 +7,7 @@ public class MainTopology {
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
         //builder.setSpout("IntegerSpout", new IntegerSpout());
-        builder.setSpout("IntegerSput", new IntegerSpout(), 2);
+        builder.setSpout("IntegerSpout", new IntegerSpout(), 3);
         builder.setBolt("MyBolt",new MyBolt(),2).shuffleGrouping("IntegerSpout");
 
         Config config = new Config();
