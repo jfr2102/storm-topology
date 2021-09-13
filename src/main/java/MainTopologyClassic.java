@@ -23,7 +23,7 @@ public class MainTopologyClassic {
 
         try {
             // for local cluster:
-            // cluster.submitTopology("toplogy", config, builder.createTopology());
+            // cluster.submitTopology("topology", config, builder.createTopology());
             // for production cluster:
             StormSubmitter.submitTopology("mytopology", config, builder.createTopology());
             // Thread.sleep(1000);

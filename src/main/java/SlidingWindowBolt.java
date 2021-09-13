@@ -1,8 +1,10 @@
+import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.*;
 import org.apache.storm.windowing.TupleWindow;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import java.util.Map;
 import com.codahale.metrics.Counter;
@@ -11,7 +13,7 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
     private OutputCollector collector;
     private Counter counter;
     private Counter windowCounter;
-    
+
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
@@ -22,14 +24,33 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
     @Override
     public void execute(TupleWindow inputWindow) {
         long window_sum = 0;
+        long window_length = 0;
+
+        long start_event_time = inputWindow.getStartTimestamp();
+        long end_event_time = inputWindow.getEndTimestamp();
+
         for (Tuple tuple : inputWindow.get()) {
-            window_sum = window_sum + tuple.getLongByField("temp");
-            collector.ack(tuple);
+            window_sum += tuple.getLongByField("sensordata");
+            // was wenn innerhalb window tuple failed eig. müsste ganzes window failed
+            // werden? -> stateful window later
             counter.inc();
+            window_length++;
         }
+        long window_avg = window_sum / window_length;
         // emit the results
-        collector.emit(new Values(window_sum));
+
+        String kafkaKey = "Window_id: " + windowCounter.getCount();
+        String kafkaMessage = "{ window_avg: " + window_avg + ", start_event_time: " + start_event_time
+                + ", end_event_time: " + end_event_time + " }";
+
+        collector.emit(new Values(kafkaKey, kafkaMessage));
         windowCounter.inc();
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields("key", "message"));
+
     }
 
 }
