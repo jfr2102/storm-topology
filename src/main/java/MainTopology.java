@@ -30,8 +30,7 @@ public class MainTopology {
         tp.setBolt("bolt", new KafkaParserBolt(), 2).fieldsGrouping("kafka_spout", new Fields("partition"));
 
         tp.setBolt("windowbolt",
-                new SlidingWindowBolt().withTimestampField("timestamp")
-                        .withTumblingWindow(new Duration(1, TimeUnit.SECONDS)),
+                new SlidingWindowBolt().withTimestampField("timestamp").withTumblingWindow(new Duration(1, TimeUnit.SECONDS)),
                 2).fieldsGrouping("bolt", new Fields("partition"));
 
         Properties kafkaExportProps = new Properties();
@@ -46,8 +45,8 @@ public class MainTopology {
         tp.setBolt("Kafka_Emitter", kafkaBolt).shuffleGrouping("windowbolt");
 
         Config config = new Config();
-        config.setDebug(true);
-        config.setNumWorkers(10);
+        config.setDebug(false);
+        config.setNumWorkers(6);
         // config.setMaxSpoutPending(50000);
         config.setNumEventLoggers(1);
         config.setStatsSampleRate(0.1);

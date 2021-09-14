@@ -1,6 +1,8 @@
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.*;
 import org.apache.storm.windowing.TupleWindow;
+
+import org.json.JSONObject;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
@@ -8,6 +10,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import java.util.Map;
 import com.codahale.metrics.Counter;
+
 
 public class SlidingWindowBolt extends BaseWindowedBolt {
     private OutputCollector collector;
@@ -37,11 +40,20 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
             window_length++;
         }
         long window_avg = window_sum / window_length;
-        // emit the results
+        
+        
+        // mit the results
+        JSONObject json_message = new JSONObject();
+        json_message.put("window_avg", window_avg);
+        json_message.put("start_event_time", start_event_time);
+        json_message.put("end_event_time", end_event_time);
+        json_message.put("window_size", window_length);
 
-        String kafkaKey = "Window_id: " + windowCounter.getCount();
-        String kafkaMessage = "{ window_avg: " + window_avg + ", start_event_time: " + start_event_time
-                + ", end_event_time: " + end_event_time + " }";
+        String kafkaMessage = json_message.toString();
+        String kafkaKey = "window_id: " + windowCounter.getCount();
+
+        //String kafkaMessage = "{ window_avg: " + window_avg + ", start_event_time: " + start_event_time
+        //        + ", end_event_time: " + end_event_time + " window_size: " + window_length + " }";
 
         collector.emit(new Values(kafkaKey, kafkaMessage));
         windowCounter.inc();
