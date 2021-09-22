@@ -30,16 +30,13 @@
             </plugin>
         </plugins>
     </build>
-
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.apache.storm/storm-core -->
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>2.2.0</version>
             <scope>provided</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.storm/storm-kafka-client -->
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka-client</artifactId>
@@ -50,12 +47,16 @@
             <artifactId>kafka-clients</artifactId>
             <version>2.7.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-redis</artifactId>
+            <version>2.2.0</version>
+            <type>jar</type>
+        </dependency>        
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20210307</version>
         </dependency>
     </dependencies>
-    
 </project>

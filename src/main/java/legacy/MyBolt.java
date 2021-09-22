@@ -1,3 +1,4 @@
+package legacy;
 import com.codahale.metrics.*;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;

@@ -1,3 +1,4 @@
+package legacy;
 import org.apache.storm.spout.ISpoutOutputCollector;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;

@@ -30,7 +30,9 @@ public class MainTopology {
         tp.setBolt("bolt", new KafkaParserBolt(), 2).fieldsGrouping("kafka_spout", new Fields("partition"));
 
         tp.setBolt("windowbolt",
-                new SlidingWindowBolt().withTimestampField("timestamp").withTumblingWindow(new Duration(1, TimeUnit.SECONDS)),
+                new SlidingWindowBolt().withTimestampField("timestamp")
+                        .withTumblingWindow(new Duration(10, TimeUnit.SECONDS))
+                        .withLag(new Duration(1000, TimeUnit.MILLISECONDS)),
                 2).fieldsGrouping("bolt", new Fields("partition"));
 
         Properties kafkaExportProps = new Properties();
@@ -47,18 +49,17 @@ public class MainTopology {
         Config config = new Config();
         config.setDebug(false);
         config.setNumWorkers(6);
-        // config.setMaxSpoutPending(50000);
+        //config.setMaxSpoutPending(100000);
         config.setNumEventLoggers(1);
-        config.setStatsSampleRate(0.1);
+        config.setStatsSampleRate(0.01);
         config.setNumAckers(1);
 
-        // For local cluster run
+        // For local cluster:
         // LocalCluster cluster = new LocalCluster();
         try {
-            // @TODO für production cluster
+            //production cluster
             StormSubmitter.submitTopology("KafkaTopology", config, tp.createTopology());
-
-            // bei local cluster:
+            // for local cluster:
             // cluster.submitTopology("topology", config, tp.createTopology());
             // Thread.sleep(1000);
         } catch (Exception e) {
@@ -68,13 +69,3 @@ public class MainTopology {
         }
     }
 }
-// java.lang.RuntimeException: org.apache.kafka.common.errors.TimeoutException:
-// Timeout of 60000ms expired before the last committed offset for partitions
-// [mytopic-0] could be determined. Try tuning default.api.timeout.ms larger to
-// relax the threshold.
-// at org.apache.storm.utils.Utils$1.run(Utils.java:409)
-// at java.base/java.lang.Thread.run(Unknown Source)
-// Caused by: org.apache.kafka.common.errors.TimeoutException: Timeout of
-// 60000ms expired before the last committed offset for partitions [mytopic-0]
-// could be determined. Try tuning default.api.timeout.ms larger to relax the
-// threshold.
