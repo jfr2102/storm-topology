@@ -25,15 +25,17 @@ public class MainTopology {
                 .setProp(ConsumerConfig.GROUP_ID_CONFIG, "stormconsumer")
                 // .setRecordTranslator(func, fields)
                 .setRecordTranslator(new KafkaRecordTranslator<String, String>()).build();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(kafkaConfig), 4);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(kafkaConfig), 8);
 
-        tp.setBolt("bolt", new KafkaParserBolt(), 2).fieldsGrouping("kafka_spout", new Fields("partition"));
+        tp.setBolt("bolt", new KafkaParserBolt(), 4).fieldsGrouping("kafka_spout", new Fields("partition"));
 
         tp.setBolt("windowbolt",
-                new SlidingWindowBolt().withTimestampField("timestamp")
-                        .withTumblingWindow(new Duration(10, TimeUnit.SECONDS))
-                        .withLag(new Duration(1000, TimeUnit.MILLISECONDS)),
-                2).fieldsGrouping("bolt", new Fields("partition"));
+                new SlidingWindowBolt()
+                        .withTimestampField("timestamp")
+                        .withTumblingWindow(new Duration(5, TimeUnit.SECONDS))
+                        .withLag(new Duration(100, TimeUnit.MILLISECONDS))
+                        .withLateTupleStream("late_tuples")
+                ,4).fieldsGrouping("bolt", new Fields("partition"));
 
         Properties kafkaExportProps = new Properties();
         kafkaExportProps.put("bootstrap.servers", "kafka:9094");
@@ -43,16 +45,16 @@ public class MainTopology {
 
         KafkaBolt kafkaBolt = new KafkaBolt().withProducerProperties(kafkaExportProps).withTopicSelector("results")
                 .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-
         tp.setBolt("Kafka_Emitter", kafkaBolt).shuffleGrouping("windowbolt");
+        tp.setBolt("Late_Tuples", new LateTupleBolt()).shuffleGrouping("windowbolt", "late_tuples");
 
         Config config = new Config();
         config.setDebug(false);
-        config.setNumWorkers(6);
+        config.setNumWorkers(16);
         //config.setMaxSpoutPending(100000);
-        config.setNumEventLoggers(1);
-        config.setStatsSampleRate(0.01);
-        config.setNumAckers(1);
+        config.setNumEventLoggers(2);
+        config.setStatsSampleRate(0.1);
+        config.setNumAckers(2);
 
         // For local cluster:
         // LocalCluster cluster = new LocalCluster();
