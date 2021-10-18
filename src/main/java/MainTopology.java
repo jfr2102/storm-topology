@@ -29,11 +29,19 @@ public class MainTopology {
 
         tp.setBolt("bolt", new KafkaParserBolt(), 4).fieldsGrouping("kafka_spout", new Fields("partition"));
 
-        tp.setBolt("windowbolt",
+       /* tp.setBolt("windowbolt",
                 new SlidingWindowBolt()
                         .withTimestampField("timestamp")
                         .withTumblingWindow(new Duration(5, TimeUnit.SECONDS))
                         .withLag(new Duration(100, TimeUnit.MILLISECONDS))
+                        .withLateTupleStream("late_tuples")
+                ,4).fieldsGrouping("bolt", new Fields("partition"));
+       */
+        tp.setBolt("windowbolt", new StatefulWindowBolt()
+                        .withTimestampField("timestamp")
+                        .withTumblingWindow(new Duration(5, TimeUnit.SECONDS))
+                        .withLag(new Duration(100, TimeUnit.MILLISECONDS))
+                        .withPersistence()
                         .withLateTupleStream("late_tuples")
                 ,4).fieldsGrouping("bolt", new Fields("partition"));
 
@@ -55,7 +63,8 @@ public class MainTopology {
         config.setNumEventLoggers(2);
         config.setStatsSampleRate(0.1);
         config.setNumAckers(2);
-
+        config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
+        config.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}");
         // For local cluster:
         // LocalCluster cluster = new LocalCluster();
         try {

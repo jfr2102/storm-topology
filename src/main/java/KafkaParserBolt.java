@@ -28,7 +28,7 @@ public class KafkaParserBolt extends BaseRichBolt {
             long sensordata = jsonObject.getLong("sensordata");
             long timestamp = input.getLongByField("timestamp");
             int partition = input.getIntegerByField("partition");
-            collector.emit(new Values(country, city, sensordata, timestamp, partition));
+            collector.emit(input, new Values(country, city, sensordata, timestamp, partition));
             
             counter.inc();
             collector.ack(input);

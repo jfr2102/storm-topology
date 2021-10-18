@@ -1,23 +1,27 @@
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.*;
-import org.apache.storm.windowing.TupleWindow;
-
-import org.json.JSONObject;
+import com.codahale.metrics.Counter;
+import org.apache.storm.state.KeyValueState;
+import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseStatefulWindowedBolt;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.windowing.TupleWindow;
+import org.json.JSONObject;
 
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import com.codahale.metrics.Counter;
 
-public class SlidingWindowBolt extends BaseWindowedBolt {
+public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<String, AvgState>> {
     private OutputCollector collector;
     private Counter counter;
     private Counter windowCounter;
-
+    private KeyValueState<String, AvgState> state;
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
@@ -27,7 +31,6 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
 
     @Override
     public void execute(TupleWindow inputWindow) {
-        //inputWindow.getExpired();
         long window_sum = 0;
         long window_length = 0;
         long ts = 0;
@@ -36,8 +39,9 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
         long end_event_time = inputWindow.getEndTimestamp();
 
         Map<String, AvgState> map = new HashMap<String, AvgState>();
-
-        for (Tuple tuple : inputWindow.get()) {
+        Iterator<Tuple> it = inputWindow.getIter();
+        while (it.hasNext()) {
+            Tuple tuple = it.next();
             Long sensordata = tuple.getLongByField("sensordata");
             window_sum += sensordata;
             ts = tuple.getLongByField("timestamp");
@@ -88,13 +92,9 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
         mapAsString.delete(mapAsString.length()-2, mapAsString.length()).append("}");
         return mapAsString.toString();
     }
-}
-class AvgState{
-    public long sum;
-    public long count;
-
-    public AvgState(long sum, long count) {
-        this.sum = sum;
-        this.count = count;
+    @Override
+    public void initState(KeyValueState<String, AvgState> state) {
+    this.state=state;
     }
+
 }
