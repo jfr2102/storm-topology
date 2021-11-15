@@ -25,9 +25,12 @@ public class MainTopology {
                 .setProp(ConsumerConfig.GROUP_ID_CONFIG, "stormconsumer")
                 // .setRecordTranslator(func, fields)
                 .setRecordTranslator(new KafkaRecordTranslator<String, String>()).build();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(kafkaConfig), 8);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(kafkaConfig), 6);
 
-        tp.setBolt("bolt", new KafkaParserBolt(), 4).fieldsGrouping("kafka_spout", new Fields("partition"));
+        tp.setBolt("bolt", new KafkaParserBolt(), 6).fieldsGrouping("kafka_spout", new Fields("partition"));
+        //TODO: tryout
+        // tp.setBolt("bolt", new KafkaParserBolt(), 6).localOrShuffleGrouping("kafka_spout");
+
 
        /* tp.setBolt("windowbolt",
                 new SlidingWindowBolt()
@@ -43,7 +46,9 @@ public class MainTopology {
                         .withLag(new Duration(100, TimeUnit.MILLISECONDS))
                         .withPersistence()
                         .withLateTupleStream("late_tuples")
-                ,4).fieldsGrouping("bolt", new Fields("partition"));
+                        //.withMaxEventsInMemory(150000) //TODO
+               // ,12).shuffleGrouping("bolt");
+                ,6).fieldsGrouping("bolt", new Fields("partition"));
 
         Properties kafkaExportProps = new Properties();
         kafkaExportProps.put("bootstrap.servers", "kafka:9094");
@@ -53,16 +58,18 @@ public class MainTopology {
 
         KafkaBolt kafkaBolt = new KafkaBolt().withProducerProperties(kafkaExportProps).withTopicSelector("results")
                 .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-        tp.setBolt("Kafka_Emitter", kafkaBolt).shuffleGrouping("windowbolt");
-        tp.setBolt("Late_Tuples", new LateTupleBolt()).shuffleGrouping("windowbolt", "late_tuples");
+        tp.setBolt("Kafka_Emitter", kafkaBolt, 2).shuffleGrouping("windowbolt");
+        tp.setBolt("Late_Tuple_bolt", new LateTupleBolt()).shuffleGrouping("windowbolt", "late_tuples");
 
         Config config = new Config();
+        config.setMaxSpoutPending(200000); //TODO
         config.setDebug(false);
-        config.setNumWorkers(16);
-        //config.setMaxSpoutPending(100000);
-        config.setNumEventLoggers(2);
-        config.setStatsSampleRate(0.1);
-        config.setNumAckers(2);
+        config.setNumWorkers(20);//24
+        config.setFallBackOnJavaSerialization(true);
+        config.registerSerialization(AvgState.class);
+        //config.setNumEventLoggers(2); //TODO
+        config.setStatsSampleRate(0.01);
+       // config.setNumAckers(2); //TODO
         config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
         config.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}");
         // For local cluster:

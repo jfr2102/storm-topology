@@ -17,7 +17,7 @@ public class LateTupleBolt extends BaseRichBolt {
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        late_tuples = context.registerCounter("late_tuples");
+        late_tuples = context.registerCounter("late_tuple_Bolts");
     }
 
     @Override

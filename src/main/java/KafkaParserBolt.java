@@ -28,10 +28,10 @@ public class KafkaParserBolt extends BaseRichBolt {
             long sensordata = jsonObject.getLong("sensordata");
             long timestamp = input.getLongByField("timestamp");
             int partition = input.getIntegerByField("partition");
-            collector.emit(input, new Values(country, city, sensordata, timestamp, partition));
-            
-            counter.inc();
+            String note = jsonObject.getString("note");
             collector.ack(input);
+            collector.emit(input, new Values(country, city, sensordata, timestamp, partition, note));
+            counter.inc();
         } catch (Exception e) {
             System.out.println("JSON not parseable");
             collector.fail(input);
@@ -40,8 +40,7 @@ public class KafkaParserBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("country", "city", "sensordata", "timestamp", "partition"));
-
+        declarer.declare(new Fields("country", "city", "sensordata", "timestamp", "partition", "note"));
     }
 
     @Override

@@ -37,11 +37,18 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
         long max_ts = 0;
         long start_event_time = inputWindow.getStartTimestamp();
         long end_event_time = inputWindow.getEndTimestamp();
+        long partition = -1;
+        String note = "/";
 
         Map<String, AvgState> map = new HashMap<String, AvgState>();
         Iterator<Tuple> it = inputWindow.getIter();
         while (it.hasNext()) {
             Tuple tuple = it.next();
+            if (window_length == 0){
+                //same for whole window because of FieldsGrouping by partition
+                partition = tuple.getIntegerByField("partition");
+                note = tuple.getStringByField("note");
+            }
             Long sensordata = tuple.getLongByField("sensordata");
             window_sum += sensordata;
             ts = tuple.getLongByField("timestamp");
@@ -71,6 +78,8 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
         json_message.put("window_size", window_length);
         json_message.put("last_event_ts", max_ts);
         json_message.put("count_per_city", print(map));
+        json_message.put("partition", partition);
+        json_message.put("note", note);
         String kafkaMessage = json_message.toString();
         String kafkaKey = "window_id: " + windowCounter.getCount();
 

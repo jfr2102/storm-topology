@@ -89,7 +89,7 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
         return mapAsString.toString();
     }
 }
-class AvgState{
+class AvgState implements java.io.Serializable{
     public long sum;
     public long count;
 
