@@ -22,6 +22,7 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
     private Counter counter;
     private Counter windowCounter;
     private KeyValueState<String, AvgState> state;
+
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
@@ -42,6 +43,7 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
 
         Map<String, AvgState> map = new HashMap<String, AvgState>();
         Iterator<Tuple> it = inputWindow.getIter();
+
         while (it.hasNext()) {
             Tuple tuple = it.next();
             if (window_length == 0){
@@ -70,7 +72,7 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
 
         long window_avg = window_sum / window_length;
 
-        // mit the results
+        // emit the results
         JSONObject json_message = new JSONObject();
         json_message.put("window_avg", window_avg);
         json_message.put("start_event_time", start_event_time);
@@ -103,7 +105,6 @@ public class StatefulWindowBolt extends BaseStatefulWindowedBolt<KeyValueState<S
     }
     @Override
     public void initState(KeyValueState<String, AvgState> state) {
-    this.state=state;
+    this.state = state;
     }
-
 }

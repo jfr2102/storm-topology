@@ -28,9 +28,6 @@ public class MainTopology {
         tp.setSpout("kafka_spout", new KafkaSpout<>(kafkaConfig), 6);
 
         tp.setBolt("bolt", new KafkaParserBolt(), 6).fieldsGrouping("kafka_spout", new Fields("partition"));
-        //TODO: tryout
-        // tp.setBolt("bolt", new KafkaParserBolt(), 6).localOrShuffleGrouping("kafka_spout");
-
 
        /* tp.setBolt("windowbolt",
                 new SlidingWindowBolt()
@@ -46,8 +43,6 @@ public class MainTopology {
                         .withLag(new Duration(100, TimeUnit.MILLISECONDS))
                         .withPersistence()
                         .withLateTupleStream("late_tuples")
-                        //.withMaxEventsInMemory(150000) //TODO
-               // ,12).shuffleGrouping("bolt");
                 ,6).fieldsGrouping("bolt", new Fields("partition"));
 
         Properties kafkaExportProps = new Properties();
@@ -58,32 +53,28 @@ public class MainTopology {
 
         KafkaBolt kafkaBolt = new KafkaBolt().withProducerProperties(kafkaExportProps).withTopicSelector("results")
                 .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-        tp.setBolt("Kafka_Emitter", kafkaBolt, 2).shuffleGrouping("windowbolt");
+        tp.setBolt("Kafka_Emitter", kafkaBolt, 6).localOrShuffleGrouping("windowbolt");
         tp.setBolt("Late_Tuple_bolt", new LateTupleBolt()).shuffleGrouping("windowbolt", "late_tuples");
 
         Config config = new Config();
-        config.setMaxSpoutPending(200000); //TODO
+        config.setMaxSpoutPending(500000);
         config.setDebug(false);
-        config.setNumWorkers(20);//24
+        config.setNumWorkers(24);//24
         config.setFallBackOnJavaSerialization(true);
         config.registerSerialization(AvgState.class);
-        //config.setNumEventLoggers(2); //TODO
-        config.setStatsSampleRate(0.01);
-       // config.setNumAckers(2); //TODO
+        config.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 2);
         config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
         config.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}");
-        // For local cluster:
-        // LocalCluster cluster = new LocalCluster();
+
+        // config.setStatsSampleRate(0.01);
+        // config.setNumEventLoggers(2);
+        // config.setNumAckers(2); 
         try {
-            //production cluster
             StormSubmitter.submitTopology("KafkaTopology", config, tp.createTopology());
-            // for local cluster:
-            // cluster.submitTopology("topology", config, tp.createTopology());
-            // Thread.sleep(1000);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            // cluster.shutdown();
+        
         }
     }
 }
