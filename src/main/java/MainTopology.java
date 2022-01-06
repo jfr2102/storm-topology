@@ -35,8 +35,9 @@ public class MainTopology {
                         .withTumblingWindow(new Duration(5, TimeUnit.SECONDS))
                         .withLag(new Duration(100, TimeUnit.MILLISECONDS))
                         .withLateTupleStream("late_tuples")
-                ,4).fieldsGrouping("bolt", new Fields("partition"));
+                ,6).fieldsGrouping("bolt", new Fields("partition"));
        */
+      
         tp.setBolt("windowbolt", new StatefulWindowBolt()
                         .withTimestampField("timestamp")
                         .withTumblingWindow(new Duration(5, TimeUnit.SECONDS))
@@ -62,10 +63,9 @@ public class MainTopology {
         config.setNumWorkers(24);//24
         config.setFallBackOnJavaSerialization(true);
         config.registerSerialization(AvgState.class);
-        config.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 2);
+        config.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 1);
         config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
         config.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"jedisPoolConfig\":{\"host\":\"redis\", \"port\":6379}}");
-
         // config.setStatsSampleRate(0.01);
         // config.setNumEventLoggers(2);
         // config.setNumAckers(2); 

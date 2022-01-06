@@ -1,14 +1,12 @@
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.*;
 import org.apache.storm.windowing.TupleWindow;
-
 import org.json.JSONObject;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
 import java.util.HashMap;
 import java.util.Map;
 import com.codahale.metrics.Counter;
@@ -27,7 +25,6 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
 
     @Override
     public void execute(TupleWindow inputWindow) {
-        //inputWindow.getExpired();
         long window_sum = 0;
         long window_length = 0;
         long ts = 0;
@@ -59,7 +56,7 @@ public class SlidingWindowBolt extends BaseWindowedBolt {
 
         long window_avg = window_sum / window_length;
 
-        // mit the results
+        // emit the results
         JSONObject json_message = new JSONObject();
         json_message.put("window_avg", window_avg);
         json_message.put("start_event_time", start_event_time);
